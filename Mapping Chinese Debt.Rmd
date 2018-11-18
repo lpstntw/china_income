@@ -1,0 +1,171 @@
+---
+title: "Mapping China City Income"
+author: "Po-Sheng Lee"
+output: 
+  github_document:
+    code_folding: hide
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Get the Map
+
+The first trouble I encounter is I cannot find a proper vector map data for China. Many of them are too detailed and are designed for specialized GIS software (such as the one provided on Harvard World map). These vector files take forever to read and to draw a map.
+
+Fortunately, I find the vector data from [The Humanitarian Data Exchange](https://data.humdata.org/dataset/china-administrative-boundaries), which allows me to draw a prefectural level Chinese Map.
+
+As in [Home Work 5](https://github.com/lpstntw/hw05/blob/master/china_city_income_land_economy.md), I 
+
+```{r import, echo=FALSE}
+
+library(tidyverse)
+library(sf)
+library(leaflet)
+library(viridis)
+
+china_admin <- st_read("chn_admbnda_adm1_ocha/chn_admbnda_adm1_ocha.shp")
+china_admin_prefecture <- st_read("chn_admbnda_adm2_ocha/chn_admbnda_adm2_ocha.shp") # ADM2_EN
+china_income <- read_csv("cityincome2003_13.csv") # city name
+
+```
+
+
+```{r mapping deficit in same scale}
+
+china_income <- china_income %>%
+  mutate(deficit = pub_expend - pub_income)
+
+#deficit data join with map with function
+map_gen <- function(y){
+  china_admin_prefecture %>%
+    left_join(filter(china_income, year == y), by = c("ADM2_EN" = "city"))
+}
+
+china_map_2003 <- map_gen(2003)
+china_map_2008 <- map_gen(2008)
+china_map_2013 <- map_gen(2013)
+
+# The deficit map in 2003
+china_map_2003 %>%
+  ggplot() +
+  geom_sf(aes(fill = deficit)) + 
+  scale_fill_viridis(option = "magma", labels = scales::dollar, 
+                     limits = c(0, 2000000), na.value = "white") +
+  labs(title = "2003 local deficit in same scale", fill = "RMB")
+
+china_map_2008 %>%
+  ggplot() +
+  geom_sf(aes(fill = deficit)) + 
+  scale_fill_viridis(option = "magma", labels = scales::dollar, 
+                     limits = c(0, 2000000), na.value = "white") +
+  labs(title = "2008 local deficit in same scale", fill = "RMB")
+
+china_map_2013 %>%
+  ggplot() +
+  geom_sf(aes(fill = deficit)) + 
+  scale_fill_viridis(option = "magma", labels = scales::dollar, 
+                     limits = c(0, 2000000), na.value = "white") +
+  labs(title = "2013 local deficit in same scale", fill = "RMB")
+
+```
+
+```{r mapping deficit in comparison}
+
+china_map_2003 %>%
+  mutate(deficit_cut = cut_number(deficit, n = 5)) %>%
+  ggplot() +
+  geom_sf(aes(fill = deficit_cut)) +
+  scale_fill_brewer(palette = "OrRd") +
+  labs(title = "2003 local deficit in comparison", fill = "deficit scaled")
+
+china_map_2008 %>%
+  mutate(deficit_cut = cut_number(deficit, n = 5)) %>%
+  ggplot() +
+  geom_sf(aes(fill = deficit_cut)) +
+  scale_fill_brewer(palette = "OrRd") +
+  labs(title = "2003 local deficit in comparison", fill = "deficit scaled")
+
+china_map_2013 %>%
+  mutate(deficit_cut = cut_number(deficit, n = 5)) %>%
+  ggplot() +
+  geom_sf(aes(fill = deficit_cut)) +
+  scale_fill_brewer(palette = "OrRd") +
+  labs(title = "2003 local deficit in comparison", fill = "deficit scaled")
+
+```
+
+```{r mapping output}
+
+china_map_2003 %>%
+  ggplot() +
+  geom_sf(aes(fill = output_dom)) + 
+  scale_fill_viridis(labels = scales::dollar, na.value = "white") +
+  labs(title = "2003 domestic industrial output in same scale", fill = "RMB")
+
+china_map_2008 %>%
+  ggplot() +
+  geom_sf(aes(fill = output_dom)) + 
+  scale_fill_viridis(labels = scales::dollar, na.value = "white") +
+  labs(title = "2003 domestic industrial output in same scale", fill = "RMB")
+
+china_map_2013 %>%
+  ggplot() +
+  geom_sf(aes(fill = output_dom)) + 
+  scale_fill_viridis(labels = scales::dollar, na.value = "white") +
+  labs(title = "2003 domestic industrial output in same scale", fill = "RMB")
+
+```
+
+```{r mapping gdp structure}
+
+china_map_2003 %>%
+  mutate(secondary_gdp_per = secondary_gdp_per/100) %>%
+  ggplot() +
+  geom_sf(aes(fill = secondary_gdp_per)) + 
+  scale_fill_viridis(option = "cividis", labels = scales::percent, 
+                     limits = c(0, 1), na.value = "white") +
+  labs(title = "2003 secondary GDP percentage", fill = " ")
+
+china_map_2008 %>%
+  mutate(secondary_gdp_per = secondary_gdp_per/100) %>%
+  ggplot() +
+  geom_sf(aes(fill = secondary_gdp_per)) + 
+  scale_fill_viridis(option = "cividis", labels = scales::percent, 
+                     limits = c(0, 1), na.value = "white") +
+  labs(title = "2008 secondary GDP percentage", fill = " ")
+
+china_map_2013 %>%
+  mutate(secondary_gdp_per = secondary_gdp_per/100) %>%
+  ggplot() +
+  geom_sf(aes(fill = secondary_gdp_per)) + 
+  scale_fill_viridis(option = "cividis", labels = scales::percent, 
+                     limits = c(0, 1), na.value = "white") +
+  labs(title = "2013 secondary GDP percentage", fill = " ")
+
+china_map_2003 %>%
+  mutate(tertiary_gdp_per = tertiary_gdp_per/100) %>%
+  ggplot() +
+  geom_sf(aes(fill = tertiary_gdp_per)) + 
+  scale_fill_viridis(labels = scales::percent, 
+                     limits = c(0, 1), na.value = "white") +
+  labs(title = "2003 tetiary GDP percentage", fill = " ")
+
+china_map_2008 %>%
+  mutate(tertiary_gdp_per = tertiary_gdp_per/100) %>%
+  ggplot() +
+  geom_sf(aes(fill = tertiary_gdp_per)) + 
+  scale_fill_viridis(labels = scales::percent, 
+                     limits = c(0, 1), na.value = "white") +
+  labs(title = "2008 tetiary GDP percentage", fill = " ")
+
+china_map_2013 %>%
+  mutate(tertiary_gdp_per = tertiary_gdp_per/100) %>%
+  ggplot() +
+  geom_sf(aes(fill = tertiary_gdp_per)) + 
+  scale_fill_viridis(labels = scales::percent, 
+                     limits = c(0, 1), na.value = "white") +
+  labs(title = "2013 tetiary GDP percentage", fill = " ")
+
+```
