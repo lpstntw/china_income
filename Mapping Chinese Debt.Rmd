@@ -1,13 +1,11 @@
 ---
-title: "Mapping China City Income"
+title: "Mapping China City Economy"
 author: "Po-Sheng Lee"
-output: 
-  github_document:
-    code_folding: hide
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
 # Get the Map
@@ -16,9 +14,9 @@ The first trouble I encounter is I cannot find a proper vector map data for Chin
 
 Fortunately, I find the vector data from [The Humanitarian Data Exchange](https://data.humdata.org/dataset/china-administrative-boundaries), which allows me to draw a prefectural level Chinese Map.
 
-As in [Home Work 5](https://github.com/lpstntw/hw05/blob/master/china_city_income_land_economy.md), I 
+As in [Home Work 5](https://github.com/lpstntw/hw05/blob/master/china_city_income_land_economy.md), I take advantage of the tidy dataset from Kevin Luo, and analysze it through spatial visualization.
 
-```{r import, echo=FALSE}
+```{r import}
 
 library(tidyverse)
 library(sf)
@@ -26,11 +24,17 @@ library(leaflet)
 library(viridis)
 
 china_admin <- st_read("chn_admbnda_adm1_ocha/chn_admbnda_adm1_ocha.shp")
-china_admin_prefecture <- st_read("chn_admbnda_adm2_ocha/chn_admbnda_adm2_ocha.shp") # ADM2_EN
-china_income <- read_csv("cityincome2003_13.csv") # city name
+china_admin_prefecture <- st_read("chn_admbnda_adm2_ocha/chn_admbnda_adm2_ocha.shp") %>%
+  filter(ADM2_EN != "Taiwan province")
+china_income <- read_csv("cityincome2003_13.csv")
 
 ```
 
+
+#Maping Local Deficit
+
+## Absolute Local Debt
+As we can see from the maps below, the anount of local deficit across China is homogenously small in 2003. However, in 2013, we can see an unequal distribution across China, with coastal region lower than northeastern and middle region. This result is identical with our previous result.
 
 ```{r mapping deficit in same scale}
 
@@ -71,6 +75,11 @@ china_map_2013 %>%
 
 ```
 
+
+## Relative Local Debt
+
+The three plots below illustrate the ranking of local debt in 2003, 2008 and 2013. Dark red denotes the highest rank of deficit and light orange indicates the lowest rank of deficit. We can see that the southern coastal areas used to be some of the most indebted locales in 2003; however, in 2008, the most indebted region became the central region, and this trend keeps on to 2013. Aside from the changes in central and coastal region, northeastern region was still highly indebted during this time period. It might be attributed to the decline of heavy industry in this region.
+
 ```{r mapping deficit in comparison}
 
 china_map_2003 %>%
@@ -96,27 +105,35 @@ china_map_2013 %>%
 
 ```
 
+## Domestic Industrial Output
+
+The following are mapping of domestic industrial output. During this time period, there's a significant rise in industrial output in coastal and middle region prefactural level cities. Particularly around Shandong and Jiangsu provinces. This might be the result of expansion in petroleum, chemical and car industry in this area.
+
+
 ```{r mapping output}
 
 china_map_2003 %>%
   ggplot() +
   geom_sf(aes(fill = output_dom)) + 
   scale_fill_viridis(labels = scales::dollar, na.value = "white") +
-  labs(title = "2003 domestic industrial output in same scale", fill = "RMB")
+  labs(title = "2003 domestic industrial output", fill = "RMB")
 
 china_map_2008 %>%
   ggplot() +
   geom_sf(aes(fill = output_dom)) + 
   scale_fill_viridis(labels = scales::dollar, na.value = "white") +
-  labs(title = "2003 domestic industrial output in same scale", fill = "RMB")
+  labs(title = "2008 domestic industrial output", fill = "RMB")
 
 china_map_2013 %>%
   ggplot() +
   geom_sf(aes(fill = output_dom)) + 
   scale_fill_viridis(labels = scales::dollar, na.value = "white") +
-  labs(title = "2003 domestic industrial output in same scale", fill = "RMB")
+  labs(title = "2013 domestic industrial output", fill = "RMB")
 
 ```
+
+
+The percantage of secondary and tertiary industry in all GDP is reported as followed. 2003 to 2008 is a industrialization period, as the secondary industry boom in many central and coastal region. From 2008 to 2013, industrialization seems to come to a stalemate, with some coastal prefectures' secondary industry output shrinking as tertiary industry output rising.
 
 ```{r mapping gdp structure}
 
@@ -169,3 +186,9 @@ china_map_2013 %>%
   labs(title = "2013 tetiary GDP percentage", fill = " ")
 
 ```
+
+
+## Conclusion Remark
+
+As we can see from the maps in this report, during 2003 to 2008, the rise of debt is mild, accomapnying with a rise in industrial sector. In contrast, local debt rise drastically from 2008 to 2013 despite the waning industrial sector in many area. This spatial visualization analysis informs us on the varieties of industrial transformation, debt accumulation and their possible relation. While coastal area underwent a post-industrial transformation with moderate deficit growth, middle and northeastern region witness a drastic rise in debt accompanying by (heavy) industry expansion. This unequal geographical development could be a starting point for further study.
+
